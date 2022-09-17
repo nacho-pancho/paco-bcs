@@ -3,20 +3,22 @@
 #==============================================================================
 
 """
-PACO Block Compressed Sensing
+PACO Block Compressed Sensing / DCT
+
+This version minimizes the L1 norm of the DCT coefficients of the patches
+instead of their Total Variation.
+
 @author: nacho
 """
 import os
-import sys
 import numpy as np
 from numpy.random import default_rng
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import argparse
 import patch_mapping as patmap
-import operators
 import time
 import skimage.io as imgio
+from scipy import fft
 
 rng = default_rng(42)
 use_uzawa = True
@@ -43,32 +45,36 @@ ncols  = None
 # ==============================================================================
 uzawa_mu = None
 
-def prox_g(Yu,tau, Y):
-    '''
-    :
-    :param Yu: Uzawa's argument to proximal operator: Y - mu/lambda*Dt(DY-Z+U)
-    :param Y: output
+def prox_g(x, tau, px):
+    """
+    :param x: proximal function argument
+    :param px: output
     :param args: program args
-    '''
-    n,m = Yu.shape
-    Yu = np.reshape(Yu,(-1,2)) # a lot of length-2 rows
-    nY  = np.sqrt(np.sum(Yu**2,axis=1)) # sum them mofo row norms
-    tnY = (1-tau/np.maximum(tau,nY))# * nY 
-    tY = Yu*np.tile( tnY, (2,1)).T
-    Y[:] = np.reshape(tY,(n,m))
+    """
+    w = int(np.sqrt(px.shape[1]))
+    if px is None:
+        px = np.empty(x.shape)
+    for i in range(x.shape[0]):
+        patch = np.reshape(x[i, :], (w, w))
+        fft.dctn(patch,norm="ortho", overwrite_x=True)
+        patch[np.abs(patch) < tau] = 0
+        fft.idctn(patch,norm="ortho", overwrite_x=True)
+        px[i, :] = patch.ravel()
+    return px
 
 
 #==============================================================================
 
 PtPPti = None
 ImPtPPtiP = None
+PtPPtiB = None
 POCSimg = None
 def prox_f(YpU,P,B,args,Z):
-    '''
+    """
     POCS for projecting onto the intersection of the consensus set and the CS set
     Z <- Z - Pt(PPt)i(PZ - B)
     written in transposed form (B = ZP, BPt = ZPPt, etc...)
-    '''
+    """
     global PtPPti, ImPtPPtiP, POCSimg, PtPPtiB
     if ImPtPPtiP is None:
         PPt = np.dot(P,P.T)
@@ -134,7 +140,7 @@ if __name__ == '__main__':
                         help="Differential operator for TV norm.")
     parser.add_argument("--inner-tol", type=float, default=1e-4,
                         help="Tolerance for inner ADMM.")
-    parser.add_argument("--outer-tol", type=float, default=1e-4,
+    parser.add_argument("--outer-tol", type=float, default=1e-3,
                         help="Tolerance for outer ADMM.")
     parser.add_argument("--save-iter", action="store_true",
                         help="If specified, save intermediate images.")
@@ -174,7 +180,6 @@ if __name__ == '__main__':
 
     n,m = Xtrue.shape
     P = np.loadtxt(args.meas_op)
-    D = np.loadtxt(args.diff_op)
     B = np.loadtxt(args.samples)
     if B.shape[0] != n:
         print(f'ERROR: number of compressed signals {B.shape[0]} should be {n}.\n')
@@ -202,7 +207,7 @@ if __name__ == '__main__':
         np.savetxt(os.path.join(args.outdir,'Y0_py.txt'),Y,fmt='%8.6f')
 
     prevY = np.zeros(Y.shape)   # and its previous value
-    Z = np.zeros((n,2*m)) # first approximation using pseudoinverse
+    Z = np.zeros((n,m)) #
     prevZ = np.zeros(Z.shape)   # previous value
     U = np.zeros(Z.shape)       # ADMM multipliers
     tau = args.tau              # ADMM penalty
@@ -214,12 +219,9 @@ if __name__ == '__main__':
     # min f(Y) + g(DY)
     # min f(Y) + g(Z) s.t. DY=Z
     #
-    nD = np.linalg.norm(D,2) # largest singular value
-    uzawa_mu = args.mu * args.tau / nD**2
-    print('|D|',nD,'tau',args.tau, 'mu',args.mu, 'uzawa mu',uzawa_mu)
+    print('tau',args.tau, 'mu',args.mu)
     nm = n * m
     tau0 = args.tau
-    mu = uzawa_mu
     cost = 0
     prev_cost = 0
     dcost = 1
@@ -227,42 +229,39 @@ if __name__ == '__main__':
     t0 = time.time()
     tau = tau0
     tau_prev = tau
-    DY = np.dot(Y,D.T)
     for iter in range(maxiter):
         #
         # Y(k+1) <- prox_{tf}( Z(k) - U(k) )
         #
         np.copyto(prevY, Y)
-        prox_f(Y - (mu / tau) * np.dot(DY - (Z - U), D) , P, B, args, Y)
+        #prox_f(Y - (mu / tau) * np.dot(DY - (Z - U), D) , P, B, args, Y)
+        prox_f(Z - U, P, B, args, Y)
         #
         # Z(k+1) <- prox_{tg}( Y(k+1) + U(k) )
         #
         np.copyto(prevZ, Z)
-        DY = np.dot(Y,D.T)
-        DYpU = DY + U
-        prox_g(DYpU, mu, Z)
+        prox_g(Y + U, tau, Z)
         #
         # U(k+1) <- U(k) + Y(k+1) - Z(k+1)
         #
-        dU = DY - Z
+        dU = Y - Z
         tau_prev = tau
         kappa = tau/tau_prev
         U += (1/kappa)*dU
         #
         # see if we increase or decrese stepsize
         #
-        fact = 0.995
+        fact = 0.995 # fact = 0.99
 
 
         #tau = tau0 / np.power(iter+1,0.5)
         tau = tau * fact
-        mu *= fact
         #
         # convergence
         #
         prev_cost = cost
         ndU = np.linalg.norm(dU,'fro')/(1e-10+np.linalg.norm(U,'fro'))
-        cost = (np.sum(np.abs(DY)) + np.dot(dU.ravel(),U.ravel()) + (0.5/tau)*ndU**2)/np.prod(dU.shape) 
+        cost = (np.sum(np.abs(Y)) + np.dot(dU.ravel(),U.ravel()) + (0.5/tau)*ndU**2)/np.prod(dU.shape)
         dcost = prev_cost - cost
         if not iter % 10:
             dX = np.linalg.norm(Y - prevY, 'fro') / (1e-10 + np.linalg.norm(Y, 'fro'))
