@@ -233,7 +233,6 @@ if __name__ == '__main__':
         # Y(k+1) <- prox_{tf}( Z(k) - U(k) )
         #
         np.copyto(prevY, Y)
-        #prox_f(Y - (mu / tau) * np.dot(np.dot(Y, D.T) - (Z - U), D) , P, B, args, Y)
         prox_f(Y - (mu / tau) * np.dot(DY - (Z - U), D) , P, B, args, Y)
         #
         # Z(k+1) <- prox_{tg}( Y(k+1) + U(k) )
@@ -255,7 +254,7 @@ if __name__ == '__main__':
         if dcost > 0:
             fact = 1
         else:
-            fact = 0.99 # fact = 0.5  # fact = 0.99
+            fact = 0.99
 
 
         #tau = tau0 / np.power(iter+1,0.5)
