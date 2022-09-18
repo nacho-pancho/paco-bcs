@@ -6,7 +6,7 @@ k=288 #30%
 r=1863699
 r=8636991
 I=lena
-outdir="results/lena_w${w}_s${s}_random_k${k}_r${r}"
+outdir="results/lena_itv_w${w}_s${s}_random_k${k}_r${r}"
 ./code/bcs_measure.py -D bi -o ${outdir} -w ${w} -k ${k} -s ${s} -r ${r} $* -i data/${I}.png
 ./code/bcs_paco_itv.py --save-diag \
 	-w ${w} -s ${s} \
