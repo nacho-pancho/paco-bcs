@@ -148,13 +148,11 @@ if __name__ == '__main__':
     parser.add_argument("--outdir", type=str, default=".", help="output directory")
     args = parser.parse_args()
 
-    #cmd = " ".join(sys.argv)
     print('Arguments:')
     dargs = vars(args)
     for k in dargs.keys():
         v = dargs[k]
         print(f'\t{k:8}:{v:8}')
-    #print(args)
     #
     #
     # parametros (por ahora mejores para desfile1 por lo menos)
