@@ -34,3 +34,8 @@ The contents are organized as follows:
    * `operators.py`: utility to generate difference operators such as TV in matrix form
    * `patch_mapping.py`: extraction and stitching operators. *This is actually the main bottleneck of the algorithm*. Although we have a much faster implementation using Python's C interface, we have not included it in this repository as it complicates portability and reproducibility significantly. 
    
+### Dependencies
+  
+  * `numpy`: obviously
+  * `scipy`: required for the DCT variant and BCS-SPL
+  * `scikit-image`: image I/O 
