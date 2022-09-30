@@ -10,8 +10,6 @@ import os
 import sys
 import numpy as np
 from numpy.random import default_rng
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import argparse
 import patch_mapping as patmap
 import operators
@@ -167,7 +165,7 @@ if __name__ == '__main__':
     width  = args.width
     stride = args.stride
     kappa  = args.kappa
-    Itrue = plt.imread(args.reference)
+    Itrue = imgio.imread(args.reference)
     nrows0,ncols0 = Itrue.shape
     Itrue = patmap.pad_image(Itrue,width,stride)
     

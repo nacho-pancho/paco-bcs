@@ -1,9 +1,9 @@
 #!/bin/bash
-for R in 3 #{1..5}
+for R in {1..5}
 do
   for w in 32 # 8 16 32 # 40 48
   do
-    for overlap in 16 # 2 4 8 16 32
+    for overlap in 16 32 # 2 4 8 16 32
     do 
       if ((overlap > w))
       then
@@ -19,11 +19,13 @@ do
 	I=kodim${K}
         # very random random seeds 
         #for r in 1863699 9186369 9918636 6991863 3699186 6369918 8636991
-        for S in 9186369 9918636 6991863 3699186 6369918 8636991
+        for S in 9186369 # 9918636 6991863 3699186 6369918 8636991
         do
+	  echo "IMAGE ${I} RATE ${R} WIDTH ${w} STRIDE ${s} SEED ${S}"
           outdir="results/${I}_w${w}_s${s}_random_rate_${R}_seed_${S}_paco_itv"
           if [[ -f "${outdir}/recovered.png" ]]
           then
+	    echo "${outdir}: Already computed"
 	    continue
 	  fi
 	    mkdir -p ${outdir}

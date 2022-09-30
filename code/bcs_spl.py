@@ -10,12 +10,10 @@ Smoothed Projected Landweber
 import sys
 import numpy as np
 from numpy.random import default_rng
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import argparse
 import patch_mapping as patmap
 import paco.linop as linop
-
+from skimage import io as imgio
 import scipy.signal as dsp
 
 rng = default_rng(1863699)
@@ -89,7 +87,7 @@ if __name__ == '__main__':
     width  = args.width
     stride = width # args.stride
 
-    Itrue = plt.imread(args.input)
+    Itrue = imgio.imread(args.input)
     Itrue = patmap.pad_image(Itrue,width,stride)
     M,N = Itrue.shape
     nrows,ncols = Itrue.shape
@@ -126,7 +124,7 @@ if __name__ == '__main__':
     Rxx = 0.01*np.eye(m)
     Y = np.dot(np.dot(B,P),np.linalg.inv(np.dot(P.T,P)+Rxx))
     I = patmap.stitch(Y,width,stride,nrows,ncols)
-    plt.imsave('0.png',I)
+    imgio.imsave('0.png',I)
     #
     # main ADMM loop
     #
@@ -165,7 +163,7 @@ if __name__ == '__main__':
         psnr = 20*np.log10(1.0/Ierr)
         print(f"i={i:5} dX={dY:8.5f} MSE={Ierr:8.5f} PSNR={psnr:8.5f}")
         I = np.minimum(1.0,np.maximum(0.0,I))
-        plt.imsave(f"iter{i:04d}.png",I,cmap=cm.gray)
+        imgio.imsave(f"iter{i:04d}.png",I,cmap=cm.gray)
         if dY < args.outer_tol:
             print('converged to tolerance.')
             break
