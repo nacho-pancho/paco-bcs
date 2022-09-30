@@ -1,20 +1,19 @@
 #!/bin/bash
 w=32
 s=31
-k=288 #30%
-r=1863699
-r=8636991
+r=30
+S=8636991
 I=lena
-outdir="results/lena_dct_w${w}_s${s}_random_k${k}_r${r}"
-./code/bcs_measure.py -D bi -o ${outdir} -w ${w} -k ${k} -s ${s} -r ${r} $* -i data/${I}.png
+img=data/image/gray/classic/${I}.png
+outdir="results/${I}_itv_w${w}_s${s}_random_rate_${r}_seed_${S}"
+./code/bcs_measure.py -D bi -o ${outdir} -w ${w} -r ${r} -s ${s} -S ${S} $* -i ${img}
 ./code/bcs_paco_dct.py --save-diag \
 	-w ${w} -s ${s} \
 	--tau 1 --maxiter 500 \
 	--diff-op ${outdir}/D_w${w}.txt \
-	--meas-op ${outdir}/P_w${w}_random_k${k}_r${r}.txt \
-	--samples  ${outdir}/${I}_samples_s${s}_w${w}_random_k${k}_r${r}.txt \
-	--save-iter\
-	--reference data/${I}.png \
+	--meas-op ${outdir}/P_w${w}_random_rate_${r}_seed_${S}.txt \
+	--samples  ${outdir}/${I}_samples_s${s}_w${w}_random_rate_${r}_seed_${S}.txt \
+	--reference ${img} \
 	--outdir ${outdir} $*
-ffmpeg -i ${outdir}/iter%03d0.png -framerate 5 -vcodec copy ${outdir}/${I}_w${w}_s${s}_random_k${k}_s${r}.mkv
-#rm ${outdir}/iter*png
+ffmpeg -i ${outdir}/iter%03d0.png -framerate 5 -vcodec copy ${outdir}/${I}_w${w}_s${s}_random_rate_${r}_seed_${S}.mkv
+rm ${outdir}/iter*png

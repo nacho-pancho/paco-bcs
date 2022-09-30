@@ -165,7 +165,7 @@ if __name__ == '__main__':
     width  = args.width
     stride = args.stride
     kappa  = args.kappa
-    Itrue = imgio.imread(args.reference)
+    Itrue = imgio.imread(args.reference).astype(float)*(1/255)
     nrows0,ncols0 = Itrue.shape
     Itrue = patmap.pad_image(Itrue,width,stride)
     
