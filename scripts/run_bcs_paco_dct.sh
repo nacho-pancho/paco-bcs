@@ -1,17 +1,17 @@
 #!/bin/bash
-for R in 3 #{1..5}
+for r in 3 #{1..5}
 do
   for w in 32 # 8 16 32 # 40 48
   do
-    for overlap in 2 # 2 4 8 16 32
+    for overlap in 1 
     do 
       if ((overlap > w))
       then
         continue
       fi
-      let s=w-w/overlap
+      let s=w-overlap
       let m=s*s
-      let R=R*10
+      let R=r*10
       echo rate $R width $w stride $s dim $m meas
       # very strange images
       for K in 01 07 09 15 16 19 23
